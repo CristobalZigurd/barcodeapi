@@ -7,25 +7,27 @@ app = Flask(__name__)
 
 @app.route('/api/barcode')
 def generate_barcode():
-    # Obtener el código de los parámetros de la URL
+    # 1. Obtener el código
     code = request.args.get('code')
     if not code:
-        return "Missing code", 400
+        return "Missing code parameter", 400
 
     try:
-        # Generar el código de barras en memoria
+        # 2. Configurar el tipo de código de barras
+        # Usamos 'code128' que es el estándar para vouchers
         EAN = barcode.get_barcode_class('code128')
-        # ImageWriter genera el formato PNG
         ean = EAN(code, writer=ImageWriter())
         
-        # Usamos un búfer de bytes para no escribir en el disco de Render
+        # 3. Guardar en un buffer de memoria (indispensable para Render)
         fp = io.BytesIO()
         ean.write(fp)
-        fp.seek(0) # Volver al inicio del archivo antes de enviar
+        fp.seek(0)
         
+        # 4. Retornar el archivo como imagen PNG
         return send_file(fp, mimetype='image/png')
+        
     except Exception as e:
-        return f"Error: {str(e)}", 500
+        return f"Error interno: {str(e)}", 500
 
 if __name__ == '__main__':
     app.run(debug=True)
